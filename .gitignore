@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Entornos virtuales
+venv/
+env/
+.env
+
+# Archivos de datos extraídos
+/datos/
+
+# MacOS
+.DS_Store
+
+# IDEs y Editores
+.vscode/
+.idea/
+*.swp
+
+# Jupyter Notebook (en caso de usarse a futuro)
+.ipynb_checkpoints
+
+# Logs
+*.log
