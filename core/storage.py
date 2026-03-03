@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-import pandas as pd
+from openpyxl import Workbook
 from core.config import config
 
 class StorageManager:
@@ -40,9 +40,19 @@ class StorageManager:
         try:
             output_dir = self._create_output_dir()
             file_path = os.path.join(output_dir, filename)
+            wb = Workbook()
+            ws = wb.active
             
-            df = pd.DataFrame(data)
-            df.to_excel(file_path, index=False)
+            # Write headers
+            headers = list(data[0].keys())
+            ws.append(headers)
+            
+            # Write rows
+            for item in data:
+                row = [item.get(header, "") for header in headers]
+                ws.append(row)
+                
+            wb.save(file_path)
             
             self.logger.info(f"Data successfully saved to {file_path}")
             return file_path

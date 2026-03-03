@@ -30,37 +30,18 @@ def main():
     if args.command == "top-empresas":
         logger.info("Starting top-empresas extraction...")
         
-        # Initialize Base Extractor
-        from modules.yahoo_finance import YahooTrendingExtractor, YahooQuoteExtractor
-        import time
+        from modules.yahoo_finance import YahooTrendingExtractor
+        from core.config import config
         
         extractor = YahooTrendingExtractor()
         
-        # Execute with fallback logic for base table
-        fallback_path = args.test_html if args.test_html else "datos/test_html.html"
-        data = extractor.execute_with_fallback(test_html_path=fallback_path)
+        # Execute with deep scrape logic
+        fallback_path = args.test_html if args.test_html else config.DEFAULT_TEST_HTML
+        enriched_data = extractor.run_deep_scrape(test_html_path=fallback_path)
         
-        if not data:
-            logger.error("No base data extracted. Process failed.")
+        if not enriched_data:
+            logger.error("Deep scrape failed or returned no data.")
             sys.exit(1)
-            
-        # Phase 2: Deep Scrape logic
-        logger.info(f"Initiating deep scrape for {len(data)} items...")
-        enriched_data = []
-        for item in data:
-            symbol = item.get("Symbol")
-            if symbol and symbol != "--":
-                logger.info(f"Fetching deep details for {symbol}...")
-                quote_extractor = YahooQuoteExtractor(symbol=symbol)
-                details = quote_extractor.execute()
-                
-                # Merge dictionaries
-                if details:
-                    item.update(details)
-                
-                # Sleep to prevent bot blocking
-                time.sleep(1)
-            enriched_data.append(item)
             
         # Initialize Storage Manager
         storage = StorageManager(module_name="top-empresas")

@@ -1,7 +1,9 @@
 import os
+import time
 from bs4 import BeautifulSoup
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from core.extractor import BaseExtractor
+from core.config import config
 import logging
 
 class YahooTrendingExtractor(BaseExtractor):
@@ -76,7 +78,7 @@ class YahooTrendingExtractor(BaseExtractor):
         self.logger.info(f"Successfully extracted {len(data)} records.")
         return data
 
-    def execute_with_fallback(self, test_html_path: str = None) -> List[Dict[str, Any]]:
+    def execute_with_fallback(self, test_html_path: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Executes the extraction. If fetching fails (often due to bot protection),
         it falls back to loading a local HTML file if provided.
@@ -95,6 +97,31 @@ class YahooTrendingExtractor(BaseExtractor):
                 
         return self.parse(html)
 
+    def run_deep_scrape(self, test_html_path: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Executes the basic trending scrape and then enriches the data by scraping each quote individually.
+        """
+        data = self.execute_with_fallback(test_html_path)
+        if not data:
+            self.logger.error("No base data extracted. Deep scrape cannot proceed.")
+            return []
+            
+        self.logger.info(f"Initiating deep scrape for {len(data)} items...")
+        enriched_data = []
+        for item in data:
+            symbol = item.get("Symbol")
+            if symbol and symbol != "--":
+                self.logger.info(f"Fetching deep details for {symbol}...")
+                quote_extractor = YahooQuoteExtractor(symbol=symbol)
+                details = quote_extractor.execute()
+                
+                if details:
+                    item.update(details)
+                
+                time.sleep(config.RATE_LIMIT_DELAY)
+            enriched_data.append(item)
+            
+        return enriched_data
 
 class YahooQuoteExtractor(BaseExtractor):
     """

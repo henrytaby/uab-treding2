@@ -3,6 +3,8 @@ from typing import List, Dict, Any, Optional
 import requests
 from bs4 import BeautifulSoup
 import logging
+from core.config import config
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 class BaseExtractor(ABC):
     """
@@ -15,6 +17,11 @@ class BaseExtractor(ABC):
         self.url = url
         self.logger = logging.getLogger(self.__class__.__name__)
         
+    @retry(
+        stop=stop_after_attempt(config.MAX_RETRIES),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(requests.RequestException)
+    )
     def fetch_html(self) -> Optional[str]:
         """
         Fetches the HTML content from the target URL.
