@@ -163,6 +163,19 @@ class YahooQuoteExtractor(BaseExtractor):
                     # but here we keep them direct.
                     details[label_text] = value_text
                     
+        # Extraer datos de costo y variacion de la accion
+        price_span = soup.find('span', {'data-testid': 'qsp-price'})
+        if price_span:
+            details["Precio Actual"] = price_span.get_text(strip=True)
+            
+        price_change_span = soup.find('span', {'data-testid': 'qsp-price-change'})
+        if price_change_span:
+            details["Variación $"] = price_change_span.get_text(strip=True)
+            
+        price_change_percent_span = soup.find('span', {'data-testid': 'qsp-price-change-percent'})
+        if price_change_percent_span:
+            details["Variación %"] = price_change_percent_span.get_text(strip=True)
+                    
         self.logger.info(f"Successfully extracted {len(details)} quote details for {self.symbol}.")
         # To comply with BaseExtractor signature, return a list containing the dict.
         # But for ease of use in main.py, returning a dict directly is more practical for joining.
